@@ -3,6 +3,7 @@ from data.collators import MMStarCollator, VQACollator
 from data.datasets import MMStarDataset, VQADataset
 from data.processors import get_image_processor, get_tokenizer
 from datasets import concatenate_datasets, load_dataset
+from models.vit import ViT
 from torch.utils.data import DataLoader
 
 
@@ -50,13 +51,28 @@ def main():
     train_config = config.TrainConfig()
     train_dataloader, test_dataloader = get_dataloaders(train_config, vlm_config)
     tokenizer = get_tokenizer(vlm_config.lm_tokenizer)
+    vit = ViT.from_pretrained(vlm_config)
+
     print(f"eos token is {tokenizer.eos_token_id}")
+    print("train dataloader")
     for batch in train_dataloader:
-        print(batch)
+        print(batch.keys())
+        for k, v in batch.items():
+            print(k, v.shape)
         break
 
+    print("test dataloader")
+    i = 0
     for batch in test_dataloader:
-        print(batch)
+        print(batch.keys())
+        for k, v in batch.items():
+            print(k, v.shape)
+            if k == "image":
+                print(f"vit output shape is {vit(v).shape}")
+            if k == "labels":
+                print(
+                    f"Raw value of v[0]: {v[0]}, decoded value: {tokenizer.decode(v[0])}"
+                )
         break
 
 

@@ -51,6 +51,7 @@ class VQACollator:
         for i in range(len(text_data)):
             input_sequences.append(f"{text_data[i]} {answer[i]}")
 
+        # max length is 192
         encoded_full_sequences = self.tokenizer.batch_encode_plus(
             input_sequences,
             padding="max_length",

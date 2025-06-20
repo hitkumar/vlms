@@ -3,9 +3,7 @@ from data.collators import MMStarCollator, VQACollator
 from data.datasets import MMStarDataset, VQADataset
 from data.processors import get_image_processor, get_tokenizer
 from datasets import concatenate_datasets, load_dataset
-from models.lm import LM
-from models.mp import MP
-from models.vit import ViT
+from models import LM, MP, ViT, VLM
 from torch.utils.data import DataLoader
 
 
@@ -58,18 +56,27 @@ def main():
     lm = LM.from_pretrained(vlm_config)
     print(f"lm use_tokens is {lm.lm_use_tokens}, lm tie tokens is {lm.lm_tie_weights}")
 
+    vlm = VLM.from_pretrained(vlm_config)
+    print(f"vlm cls flag is {vlm.vision_encoder.cls_flag}")
+
     print(f"eos token is {tokenizer.eos_token_id}")
     print("train dataloader")
     for batch in train_dataloader:
+        print(batch.keys())
+        vlm_out = vlm(
+            batch["input_ids"],
+            batch["image"],
+            batch["attention_mask"],
+            batch["labels"],
+        )
+        print(f"vlm output shape is {vlm_out[0].shape}")
         print(batch.keys())
         for k, v in batch.items():
             print(k, v.shape)
         break
 
     print("test dataloader")
-    i = 0
     for batch in test_dataloader:
-        print(batch.keys())
         for k, v in batch.items():
             print(k, v.shape)
             if k == "image":

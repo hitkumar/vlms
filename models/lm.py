@@ -1,9 +1,7 @@
-import math
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from models.config import VLMConfig
+from models import VLMConfig
 
 
 class RMSNorm(nn.Module):
@@ -64,7 +62,7 @@ class RotaryEmbedding(nn.Module):
             inv_freq = self.inv_freq
 
         # (B*N, )
-        flat_position_ids = position_ids.view(-1).float()
+        flat_position_ids = position_ids.reshape(-1).float()
         # [B*N, dim // 2]
         freqs = flat_position_ids.unsqueeze(-1) * inv_freq.unsqueeze(0)
         freqs = freqs.reshape(batch_size, seq_len, self.dim // 2)
@@ -112,8 +110,7 @@ class LMGroupedQueryAttention(nn.Module):
         # assumes that this is available on the device
         self.flash = hasattr(F, "scaled_dot_product_attention")
 
-    def forward(self, x, cos, sin):
-        # TODO: Add attention mask
+    def forward(self, x, cos, sin, attention_mask=None):
         """
         x is [B, N, D] where N is the number of tokens and D is the hidden dimension of LM.
         """
@@ -131,11 +128,18 @@ class LMGroupedQueryAttention(nn.Module):
         k = k.repeat_interleave(self.n_kv_groups, dim=1)
         v = v.repeat_interleave(self.n_kv_groups, dim=1)
 
+        if attention_mask is not None:
+            # shape of mask is [B, N] where N is the number of tokens
+            # make shape [B, 1, 1, N] so that it can be broadcasted to Q and K
+            attention_mask = attention_mask.unsqueeze(1).unsqueeze(2)
+            # value is -inf for padding tokens and 0 for other tokens, this is added to the attn scores.
+            attention_mask = (1 - attention_mask) * torch.finfo(x.dtype).min
+
         y = F.scaled_dot_product_attention(
             q,
             k,
             v,
-            attn_mask=None,
+            attn_mask=attention_mask,
             dropout_p=self.dropout if self.training else 0.0,
             is_causal=True,
         )
@@ -172,8 +176,8 @@ class LMBlock(nn.Module):
         self.norm1 = RMSNorm(cfg)
         self.norm2 = RMSNorm(cfg)
 
-    def forward(self, x, cos, sin):
-        x = x + self.attention(self.norm1(x), cos, sin)
+    def forward(self, x, cos, sin, attention_mask=None):
+        x = x + self.attn(self.norm1(x), cos, sin, attention_mask)
         x = x + self.mlp(self.norm2(x))
         return x
 
@@ -216,7 +220,7 @@ class LM(nn.Module):
         cos, sin = self.rotary_embd(position_ids)
 
         for block in self.blocks:
-            x = block(x, cos, sin)
+            x = block(x, cos, sin, attention_mask)
 
         x = self.norm(x)
         # compute logits if we are using tokens, else return the embeddings

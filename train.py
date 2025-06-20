@@ -3,6 +3,7 @@ from data.collators import MMStarCollator, VQACollator
 from data.datasets import MMStarDataset, VQADataset
 from data.processors import get_image_processor, get_tokenizer
 from datasets import concatenate_datasets, load_dataset
+from models.lm import LM
 from models.mp import MP
 from models.vit import ViT
 from torch.utils.data import DataLoader
@@ -54,6 +55,8 @@ def main():
     tokenizer = get_tokenizer(vlm_config.lm_tokenizer)
     vit = ViT.from_pretrained(vlm_config)
     mp = MP(vlm_config)
+    lm = LM.from_pretrained(vlm_config)
+    print(f"lm use_tokens is {lm.lm_use_tokens}, lm tie tokens is {lm.lm_tie_weights}")
 
     print(f"eos token is {tokenizer.eos_token_id}")
     print("train dataloader")

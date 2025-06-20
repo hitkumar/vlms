@@ -114,3 +114,11 @@ class VLM(nn.Module):
         model.vision_encoder = ViT.from_pretrained(cfg)
         model.decoder = LM.from_pretrained(cfg)
         return model
+
+    def load_checkpoint(self, path):
+        print(f"Loading weights from full VLM checkpoint: {path}")
+        checkpoint = torch.load(
+            path,
+            map_location=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
+        )
+        self.load_state_dict(checkpoint)

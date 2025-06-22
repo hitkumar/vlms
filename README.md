@@ -8,6 +8,7 @@ Videos
 
 Dev Env
 - To activate the uv env, use source .venv/bin/activate
+- To run the train script, use `python -u train.py > /tmp/logs.txt 2>&1`
 
 Notes
 - Dataloader design can be simplified by returning the full input sequence from the datasets.py

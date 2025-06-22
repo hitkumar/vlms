@@ -1,4 +1,4 @@
-from models.config import VLMConfig
+from models.config import TrainConfig, VLMConfig
 from models.lm import LM
 from models.mp import MP
 from models.vit import ViT
@@ -10,4 +10,5 @@ __all__ = [
     "MP",
     "LM",
     "VLM",
+    "TrainConfig",
 ]

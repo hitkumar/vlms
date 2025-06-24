@@ -12,3 +12,12 @@ Dev Env
 
 Notes
 - Dataloader design can be simplified by returning the full input sequence from the datasets.py
+
+
+Experimental Results
+- 1 GPU training can get 50% accuracy on mmstar (best accuracy)
+
+Next steps
+- Evals
+- Incorporate other changes from the main repo
+- Add more datasets including image captioning.

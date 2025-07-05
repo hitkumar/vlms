@@ -24,4 +24,5 @@ CUDA_VISIBLE_DEVICES=0 python -m verifiers.inference.vllm_server --model 'willcb
 CUDA_VISIBLE_DEVICES=1 accelerate launch --config-file rl/configs/zero3.yaml  rl/examples/math_python.py
 
 Next steps
-- verify that the model training works.
+- verify that the model training works. Training is still not working as VLLM connection to produce generations is broken.
+- For now grpo_demo.py works, lets use this to test the RL training. Will need to go deep into verifiers to understand how to get the vllm connection to work.

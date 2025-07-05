@@ -57,7 +57,8 @@ training_args.per_device_train_batch_size = 8
 training_args.num_iterations = 2
 training_args.num_generations = 8
 training_args.gradient_accumulation_steps = 2
-# training_args.vllm_server_host = "host_name"
+training_args.vllm_server_host = "localhost"
+training_args.vllm_server_port = 29500
 
 trainer = vf.GRPOTrainer(
     model=model,

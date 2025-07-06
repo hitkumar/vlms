@@ -1,5 +1,5 @@
 # run using:
-# accelerate launch --config-file rl/configs/zero3.yaml rl/examples/grpo_demo.py
+# accelerate launch --config-file rl/configs/zero3.yaml rl/examples/grpo_demo.py > /tmp/logs.txt 2>&1
 import re
 
 import torch
@@ -67,6 +67,7 @@ def get_gsm8k_questions(split="train") -> Dataset:
 
 
 dataset = get_gsm8k_questions()
+print(f"length of dataset: {len(dataset)}")
 
 
 # Reward functions
@@ -128,7 +129,7 @@ def xmlcount_reward_func(completions, **kwargs) -> list[float]:
 
 model_name = "Qwen/Qwen3-1.7B"
 
-output_dir = f"outputs/{model_name}_GRPO"
+output_dir = f"outputs/qwen_3_1_7b_gsm8k"
 run_name = f"{model_name}_gsm8k"
 
 training_args = GRPOConfig(
@@ -144,11 +145,12 @@ training_args = GRPOConfig(
     bf16=True,
     per_device_train_batch_size=8,
     gradient_accumulation_steps=4,
-    num_generations=16,
+    num_generations=8,
     max_prompt_length=256,
     max_completion_length=786,
     num_train_epochs=1,
-    save_steps=100,
+    save_steps=10,
+    save_strategy="steps",
     max_grad_norm=0.1,
     # report_to="wandb",
     log_on_each_node=False,
@@ -192,4 +194,7 @@ trainer = GRPOTrainer(
     args=training_args,
     train_dataset=dataset,
 )
+
+steps_per_epoch = len(trainer.get_train_dataloader())
+print(f"Steps per epoch: {steps_per_epoch}")
 trainer.train()

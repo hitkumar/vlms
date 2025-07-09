@@ -11,3 +11,11 @@ Lecture 3
 - Weight decay point was interesting, can be tried.
 - Stability tricks are good to know, refer to his slides for more details.
 - Best resource for practical LLM tricks.
+
+Lecture 4
+- MOE
+- Talks about the routing function to get top k experts
+- Stability issues with MOE
+- Load balancing loss is critical to get all experts to be used. Several aspects of this are not yet fully clear including aux z-loss.
+- Deepseek series and OLMOe are good papers to review next.
+- Implement MOE in vlms.

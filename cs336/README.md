@@ -19,3 +19,9 @@ Lecture 4
 - Load balancing loss is critical to get all experts to be used. Several aspects of this are not yet fully clear including aux z-loss.
 - Deepseek series and OLMOe are good papers to review next.
 - Implement MOE in vlms.
+
+Lecture 5
+- Talks about GPUs and how to use them effectively
+- Shared memory and global memory (DRAM)
+- Tiling, burst sections, memory coallescing are some key ideas to understand GPU performance for models
+- Flash attention walkthrough - tiling, operator fusion and online softmax are key ideas.

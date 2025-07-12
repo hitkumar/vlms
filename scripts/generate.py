@@ -1,12 +1,6 @@
-import os
-import sys
-
 import torch
 
-# TODO: fix this by fixing data module.
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from data.processors import get_image_processor, get_tokenizer
+from data import get_image_processor, get_tokenizer
 from models import VLM, VLMConfig
 from PIL import Image
 

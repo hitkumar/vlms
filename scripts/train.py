@@ -6,9 +6,14 @@ import models.config as config
 import models.utils as utils
 import torch
 import torch.optim as optim
-from data.collators import MMStarCollator, VQACollator
-from data.datasets import MMStarDataset, VQADataset
-from data.processors import get_image_processor, get_tokenizer
+from data import (
+    get_image_processor,
+    get_tokenizer,
+    MMStarCollator,
+    MMStarDataset,
+    VQACollator,
+    VQADataset,
+)
 from datasets import concatenate_datasets, load_dataset
 from models import TrainConfig, VLM, VLMConfig
 from torch.utils.data import DataLoader

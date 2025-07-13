@@ -129,13 +129,13 @@ class VitMLP(nn.Module):
 class ViTBlock(nn.Module):
     def __init__(self, cfg: VLMConfig):
         super().__init__()
-        self.attention = ViTMultiHeadAttention(cfg)
+        self.attn = ViTMultiHeadAttention(cfg)
         self.ln1 = nn.LayerNorm(cfg.vit_hidden_dim, eps=cfg.vit_ln_eps)
         self.mlp = VitMLP(cfg)
         self.ln2 = nn.LayerNorm(cfg.vit_hidden_dim, eps=cfg.vit_ln_eps)
 
     def forward(self, x):
-        x = x + self.attention(self.ln1(x))
+        x = x + self.attn(self.ln1(x))
         x = x + self.mlp(self.ln2(x))
         return x
 

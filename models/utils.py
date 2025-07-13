@@ -1,4 +1,7 @@
+import os
 import re
+
+from safetensors.torch import safe_open
 
 
 def check_multiple_choice_with_regex(model_outputs, correct_answers):
@@ -21,3 +24,16 @@ def check_multiple_choice_with_regex(model_outputs, correct_answers):
         results.append(match_found)
 
     return results
+
+
+def get_safetensors_keys(file_path):
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File not found: {file_path}")
+
+    try:
+        with safe_open(file_path, framework="pt") as f:
+            keys = f.keys()
+            return list(keys)
+    except Exception as e:
+        print(f"Error reading safetensors file: {e}")
+        return None

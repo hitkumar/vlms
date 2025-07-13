@@ -1,16 +1,31 @@
+import json
+import os
+from typing import Optional
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from models import LM, MP, ViT, VLMConfig
+from models.utils import get_safetensors_keys
+
+from safetensors import safe_open
+from safetensors.torch import load_model, safe_open, save_model
 
 
 class VLM(nn.Module):
-    def __init__(self, cfg: VLMConfig):
+    def __init__(self, cfg: VLMConfig, load_backbone=True):
         super().__init__()
         self.cfg = cfg
-        self.vision_encoder = ViT(cfg)
+        if load_backbone:
+            print("Loading backbone from safetensors...")
+            self.vision_encoder = ViT.from_pretrained(cfg)
+            self.decoder = LM.from_pretrained(cfg)
+        else:
+            self.vision_encoder = ViT(cfg)
+            self.decoder = LM(cfg)
+
         self.MP = MP(cfg)
-        self.decoder = LM(cfg)
+        self.load_backbone = load_backbone
 
     def forward(self, input_ids, image, attention_mask=None, targets=None):
         # Process image to be in the same embedding space as text tokens
@@ -106,19 +121,39 @@ class VLM(nn.Module):
         return generated_tokens
 
     @classmethod
-    def from_pretrained(cls, cfg: VLMConfig):
+    def from_pretrained(
+        cls, repo_id_or_path: str, revision: Optional[str] = None
+    ) -> "VLM":
         """
-        Assumes that the pretrained model is a SigLip model
+        Loads a pretrained VLM model from a repo_id or path.
         """
-        model = cls(cfg)
-        model.vision_encoder = ViT.from_pretrained(cfg)
-        model.decoder = LM.from_pretrained(cfg)
-        return model
+        if os.path.exists(repo_id_or_path):
+            config_path = os.path.join(repo_id_or_path, "config.json")
+            weights_path = os.path.join(repo_id_or_path, "model.safetensors")
+            if not os.path.exists(config_path):
+                raise ValueError(
+                    f"Config file not found at {config_path}. Please provide a valid path."
+                )
+            if not os.path.exists(weights_path):
+                raise ValueError(
+                    f"Weights file not found at {weights_path}. Please provide a valid path."
+                )
+        else:
+            from huggingface_hub import hf_hub_download
 
-    def load_checkpoint(self, path):
-        print(f"Loading weights from full VLM checkpoint: {path}")
-        checkpoint = torch.load(
-            path,
-            map_location=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
-        )
-        self.load_state_dict(checkpoint)
+            config_path = hf_hub_download(
+                repo_id=repo_id_or_path, filename="config.json", revision=revision
+            )
+            weights_path = hf_hub_download(
+                repo_id=repo_id_or_path, filename="model.safetensors", revision=revision
+            )
+
+        with open(config_path, "r") as f:
+            cfg = VLMConfig(**json.load(f))
+
+        model = cls(cfg, load_backbone=False)
+
+        # print(get_safetensors_keys(weights_path))
+
+        load_model(model, weights_path)
+        return model

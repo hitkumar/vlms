@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -21,7 +21,11 @@ class VLMConfig:
     lm_rms_eps: float = 1e-5
     lm_re_base: int = 100000
     lm_max_position_embeddings: int = 8192
-    lm_vocab_size: int = 49280
+    lm_base_vocab_size: int = 49280
+    extra_token_amount: int = (
+        1  # number of extra tokens for the vlm (image_start, image_end, etc.)
+    )
+    lm_vocab_size: int = lm_base_vocab_size + extra_token_amount
     lm_n_heads: int = 9
     lm_n_kv_heads: int = 3
     lm_dropout: float = 0.0
@@ -36,14 +40,19 @@ class VLMConfig:
     lm_tie_weights: bool = (
         False  # Decide if you want to tie the LM Head weight to the token embeding weights
     )
-    lm_model_type: str = "HuggingFaceTB/SmolLM2-135M"
-    lm_tokenizer: str = "HuggingFaceTB/cosmo2-tokenizer"
+    lm_model_type: str = "HuggingFaceTB/SmolLM2-360M-Instruct"
+    lm_tokenizer: str = "HuggingFaceTB/SmolLM2-360M-Instruct"
     lm_eos_token_id: int = 0
 
     mp_pixel_shuffle_factor: int = 4
+    mp_image_token_length: int = 64
 
     vlm_load_backbone_weights: bool = True
-    vlm_checkpoint_path: str = "vlm_model_0502_smolvlm.pth"
+    vlm_checkpoint_path: str = "checkpoints"
+    hf_repo_name: str = "nanoVLM"
+    vlm_extra_tokens: dict[str, str] = field(
+        default_factory=lambda: {"image_token": "<|image|>"}
+    )
 
 
 @dataclass

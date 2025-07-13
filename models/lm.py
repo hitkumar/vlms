@@ -253,7 +253,6 @@ class LM(nn.Module):
         Assumes that the pretrained model is a SigLip model
         """
         import safetensors
-        import torch
         import torch.nn.init as init
         from huggingface_hub import hf_hub_download
         from transformers import AutoConfig

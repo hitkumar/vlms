@@ -8,6 +8,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from models import LM, MP, ViT, VLMConfig
+from models.utils import top_k_top_p_filtering
 
 from safetensors.torch import load_model, save_model
 
@@ -97,7 +98,8 @@ class VLM(nn.Module):
                 last_token_embds = self.decoder.head(last_token_embds)
 
             # [B, vocab_size]
-            probs = torch.softmax(last_token_embds, dim=-1)
+            filtered_logits = top_k_top_p_filtering(last_token_embds)
+            probs = torch.softmax(filtered_logits, dim=-1)
             next_token = torch.multinomial(probs, num_samples=1)
             generated_tokens[:, i] = next_token.squeeze(-1)
 

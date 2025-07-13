@@ -1,6 +1,8 @@
 import os
 import re
 
+import torch
+
 from safetensors.torch import safe_open
 
 
@@ -37,3 +39,28 @@ def get_safetensors_keys(file_path):
     except Exception as e:
         print(f"Error reading safetensors file: {e}")
         return None
+
+
+def top_k_top_p_filtering(logits, top_k=0, top_p=1.0, filter_value=-float("Inf")):
+    """
+    Filter a distribution of logits using top-k and/or nucleus (top-p) filtering
+    logits shape is (B, vocab_size) where B is the batch size, this is the output of decoder head for last token in the sequence during generation
+    """
+    top_k = min(top_k, logits.size(-1))  # Safety check
+    if top_k > 0:
+        # Remove all tokens with a probability less than the last token of the top-k
+        indices_to_remove = logits < torch.topk(logits, top_k)[0][..., -1, None]
+        logits = logits.masked_fill(indices_to_remove, filter_value)
+
+    if top_p < 1.0:
+        sorted_logits, sorted_indices = torch.sort(logits, descending=True)
+        cumulative_probs = torch.softmax(sorted_logits, dim=-1).cumsum(dim=-1)
+        sorted_indices_to_remove = cumulative_probs > top_p
+        # always keep at least the first token
+        sorted_indices_to_remove[..., 0] = False
+        indices_to_remove = sorted_indices_to_remove.scatter(
+            1, sorted_indices, sorted_indices_to_remove
+        )
+        logits = logits.masked_fill(indices_to_remove, filter_value)
+
+    return logits

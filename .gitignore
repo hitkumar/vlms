@@ -27,3 +27,4 @@ notebooks/
 
 benchmark_results.json
 **/outputs
+**.vscode/

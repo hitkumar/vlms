@@ -238,10 +238,10 @@ class ViT(nn.Module):
 
             # Output projection
             mapping[f"vision_model.encoder.layers.{i}.self_attn.out_proj.weight"] = (
-                f"blocks.{i}.attention.out_proj.weight"
+                f"blocks.{i}.attn.out_proj.weight"
             )
             mapping[f"vision_model.encoder.layers.{i}.self_attn.out_proj.bias"] = (
-                f"blocks.{i}.attention.out_proj.bias"
+                f"blocks.{i}.attn.out_proj.bias"
             )
 
         # Load the pretrained weights
@@ -289,8 +289,8 @@ class ViT(nn.Module):
             qkv_weight = torch.cat([q_weight, k_weight, v_weight], dim=0)
             qkv_bias = torch.cat([q_bias, k_bias, v_bias], dim=0)
 
-            sd[f"blocks.{i}.attention.qkv_proj.weight"].copy_(qkv_weight)
-            sd[f"blocks.{i}.attention.qkv_proj.bias"].copy_(qkv_bias)
+            sd[f"blocks.{i}.attn.qkv_proj.weight"].copy_(qkv_weight)
+            sd[f"blocks.{i}.attn.qkv_proj.bias"].copy_(qkv_bias)
 
         # Load the state dict into the model
         model.load_state_dict(sd)

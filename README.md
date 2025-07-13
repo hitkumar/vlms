@@ -24,3 +24,4 @@ Next steps
 - Incorporate other changes from the main repo
 - Add more datasets including image captioning.
 - Integrate verifiers (https://github.com/willccbb/verifiers/tree/main/docs/source) in this repo so we can do SFT and RL on the trained models.
+- Integrate Muon optimizer.

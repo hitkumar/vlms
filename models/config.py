@@ -60,7 +60,7 @@ class TrainConfig:
     lr_mp: float = 1e-4
     lr_backbones: float = 5e-5
     data_cutoff_idx: int = None
-    batch_size: int = 128
+    batch_size: int = 32
     mmstar_batch_size: int = 32
     eval_in_epochs: bool = True
     epochs: int = 1

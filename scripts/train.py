@@ -103,12 +103,9 @@ def train(train_config: TrainConfig, vlm_config: VLMConfig):
     tokenizer = get_tokenizer(vlm_config.lm_tokenizer)
 
     if train_config.resume_from_vlm_checkpoint:
-        model = VLM(vlm_config)
-        model.load_checkpoint(vlm_config.vlm_checkpoint_path)
-    elif vlm_config.vlm_load_backbone_weights:
-        model = VLM.from_pretrained(vlm_config)
+        model = VLM.from_pretrained(vlm_config.vlm_checkpoint_path)
     else:
-        model = VLM(vlm_config)
+        model = VLM(vlm_config, load_backbone=vlm_config.vlm_load_backbone_weights)
 
     num_params = sum(p.numel() for p in model.parameters())
     print(f"nanoVLM model has {num_params/1e6:.2f} million parameters")
@@ -184,6 +181,9 @@ def train(train_config: TrainConfig, vlm_config: VLMConfig):
                 print(
                     f"step: {global_step}/{len(train_dataloader) * train_config.epochs}, loss: {batch_loss:.4f}, tokens_per_sec: {tokens_per_second:.2f}, accuracy: {epoch_eval_accuracy:.2f}"
                 )
+                if vlm_config.hf_repo_name is not None:
+                    model.push_to_hub(vlm_config.hf_repo_name)
+
             global_step += 1
 
         avg_train_loss = total_train_loss / len(train_dataloader)

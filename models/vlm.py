@@ -1,15 +1,15 @@
 import json
 import os
+import tempfile
+from dataclasses import asdict
 from typing import Optional
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from models import LM, MP, ViT, VLMConfig
-from models.utils import get_safetensors_keys
 
-from safetensors import safe_open
-from safetensors.torch import load_model, safe_open, save_model
+from safetensors.torch import load_model, save_model
 
 
 class VLM(nn.Module):
@@ -157,3 +157,46 @@ class VLM(nn.Module):
 
         load_model(model, weights_path)
         return model
+
+    def save_pretrained(self, save_directory: str) -> None:
+        """
+        Save the model using safetensors.
+        """
+        os.makedirs(save_directory, exist_ok=True)
+        # save config
+        with open(os.path.join(save_directory, "config.json"), "w") as f:
+            f.write(json.dumps(asdict(self.cfg), indent=4))
+
+        # save weights
+        save_model(self, os.path.join(save_directory, "model.safetensors"))
+
+    def push_to_hub(self, repo_id: str, private: bool = False):
+        """
+        Push the model and configuration to the Hugging Face Hub.
+
+        Args:
+            repo_id (str): The repo ID on the Hugging Face Hub.
+        """
+        from huggingface_hub import create_repo, upload_folder
+
+        # Create repo
+        repo_url = create_repo(repo_id=repo_id, private=private, exist_ok=True)
+        repo_id = repo_url.repo_id
+        print("Created repo: ", repo_url)
+
+        with tempfile.TemporaryDirectory() as save_path:
+            print("Saving model to tmp directory: ", save_path)
+            # Save to tmp directory
+            self.save_pretrained(save_path)
+
+            # Save model card
+            # with open(os.path.join(save_path, "README.md"), "w") as f:
+            #     f.write(MODEL_CARD_TEMPLATE.format(repo_id=repo_id))
+
+            # Upload
+            return upload_folder(
+                repo_id=repo_id,
+                repo_type="model",
+                folder_path=save_path,
+                commit_message="Upload nanoVLM using push_to_hub",
+            )

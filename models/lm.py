@@ -212,10 +212,11 @@ class LM(nn.Module):
             module.weight.data.fill_(1.0)
 
     def forward(self, x, attention_mask=None):
+        # token embeddings are passed to the LM.
         if self.lm_use_tokens:
             x = self.token_embedding(x)
 
-        B, T, N = x.shape
+        B, T, _ = x.shape
         position_ids = torch.arange(T, device=x.device).unsqueeze(0).expand(B, -1)
         cos, sin = self.rotary_embd(position_ids)
 
@@ -228,8 +229,8 @@ class LM(nn.Module):
             x = self.head(x)
         return x
 
-    @torch.no_grad()
-    def generate(self, inputs, max_new_tokens=20):
+    @torch.inference_mode()
+    def generate(self, inputs, max_new_tokens: int = 20):
         # Generate using greedy decoding
         if inputs.dim() == 1:
             inputs = inputs.unsqueeze(0)
@@ -240,10 +241,10 @@ class LM(nn.Module):
             last_output = outputs[:, -1, :]
             if self.lm_use_tokens:
                 next_token = torch.argmax(last_output, dim=-1, keepdim=True)
-                generated = torch.cat((generated, next_token), dim=-1)
             else:
-                next_token_embedding = last_output.unsqueeze(1)
-                generated = torch.cat((generated, next_token_embedding), dim=1)
+                next_token = last_output.unsqueeze(1)
+
+            generated = torch.cat((generated, next_token), dim=1)
 
         return generated
 

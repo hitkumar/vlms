@@ -181,8 +181,8 @@ def train(train_config: TrainConfig, vlm_config: VLMConfig):
                 print(
                     f"step: {global_step}/{len(train_dataloader) * train_config.epochs}, loss: {batch_loss:.4f}, tokens_per_sec: {tokens_per_second:.2f}, accuracy: {epoch_eval_accuracy:.2f}"
                 )
-                if vlm_config.hf_repo_name is not None:
-                    model.push_to_hub(vlm_config.hf_repo_name)
+                # if vlm_config.hf_repo_name is not None:
+                #     model.push_to_hub(vlm_config.hf_repo_name)
 
             global_step += 1
 
@@ -208,13 +208,6 @@ def train(train_config: TrainConfig, vlm_config: VLMConfig):
         best_accuracy = accuracy
         best_model_state_dict = getattr(model, "_orig_mod", model).state_dict()
         best_step = global_step
-
-    # save the best model
-    if best_model_state_dict is not None:
-        torch.save(best_model_state_dict, vlm_config.vlm_checkpoint_path)
-        print(
-            f"Saved the best model to {vlm_config.vlm_checkpoint_path}, best step is {best_step}, best accuracy is {best_accuracy:.2f}"
-        )
 
 
 def main():

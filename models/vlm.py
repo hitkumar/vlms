@@ -28,6 +28,13 @@ class VLM(nn.Module):
         self.MP = MP(cfg)
         self.load_backbone = load_backbone
 
+        # Import get_tokenizer here to avoid circular import
+        from data import get_tokenizer
+
+        self.tokenizer = get_tokenizer(
+            cfg.lm_tokenizer, cfg.vlm_extra_tokens, cfg.lm_chat_template
+        )
+
     def forward(self, input_ids, image, attention_mask=None, targets=None):
         # Process image to be in the same embedding space as text tokens
         # [B, 64, 576]

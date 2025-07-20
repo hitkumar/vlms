@@ -1,91 +1,79 @@
-from math import trunc
-
 import torch
-from torch.nn import attention
-from torch.nn.modules import padding
+import torch.nn.functional as F
 
 
-class MMStarCollator:
+class BaseCollator:
     def __init__(self, tokenizer):
         self.tokenizer = tokenizer
 
-    def __call__(self, batch):
-        images = [i["image"] for i in batch]
-        text_data = [i["text_data"] for i in batch]
-        answer = [i["answer"] for i in batch]
+    def _pad_batch(self, batch, max_length):
+        """
+        batch is a dict of tensors with 4 keys
+        - input_ids list[length]
+        - attention_mask list[length]
+        - labels list[length]
+        - image list[3, img_size, img_size]
+        We do left padding here.
+        """
+        pad_token_id = self.tokenizer.pad_token_id
+        batch["input_ids"] = [
+            F.pad(ids, (max_length - len(ids), 0), value=pad_token_id)
+            for ids in batch["input_ids"]
+        ]
+        batch["attention_mask"] = [
+            F.pad(mask, (max_length - len(mask), 0), value=0)
+            for mask in batch["attention_mask"]
+        ]
+        # pad value is -100 to ignore loss calculation
+        batch["labels"] = [
+            F.pad(labels, (max_length - len(labels), 0), value=-100)
+            for labels in batch["labels"]
+        ]
+        return batch
 
-        images_tensor = torch.stack(images)
-        # TODO: Check if padding is correctly added. Normally padding is added to the right.
-        encoded_question_sequence = self.tokenizer.batch_encode_plus(
-            text_data,
-            padding=True,
-            padding_side="left",
-            return_tensors="pt",
-        )
-        encoded_answer_sequence = self.tokenizer.batch_encode_plus(
-            answer,
-            padding=True,
-            padding_side="left",
-            return_tensors="pt",
-        )
+    def prepare_batch(self, batch, max_length=None):
+        # Convert list of dicts to dict of lists
+        batch = {key: [b[key] for b in batch] for key in batch[0]}
+        if max_length is not None:
+            max_len = max_length
+            batch = self._discard_elements_greater_than_max_length(batch, max_length)
+        else:
+            max_len = max(map(len, batch["input_ids"]))
+
+        batch = self._pad_batch(batch, max_len)
         return {
-            "image": images_tensor,
-            "input_ids": encoded_question_sequence["input_ids"],
-            "attention_mask": encoded_question_sequence["attention_mask"],
-            "labels": encoded_answer_sequence["input_ids"],
+            "input_ids": torch.stack(batch["input_ids"]),
+            "attention_mask": torch.stack(batch["attention_mask"]),
+            "labels": torch.stack(batch["labels"]),
+            # this is a list of images, each image is a list of tensors of shape [3, img_size, img_size]
+            "images": batch["images"],
+        }
+
+    def _discard_elements_greater_than_max_length(self, batch, max_length):
+        filtered_data = [
+            (ids, mask, labels, image)
+            for ids, mask, labels, image in zip(
+                batch["input_ids"],
+                batch["attention_mask"],
+                batch["labels"],
+                batch["images"],
+            )
+            if len(ids) <= max_length
+        ]
+        batch_ids, batch_mask, batch_labels, batch_image = zip(*filtered_data)
+        return {
+            "input_ids": list(batch_ids),
+            "attention_mask": list(batch_mask),
+            "labels": list(batch_labels),
+            "images": list(batch_image),
         }
 
 
-class VQACollator:
+class VQACollator(BaseCollator):
     def __init__(self, tokenizer, max_length):
-        self.tokenizer = tokenizer
+        super().__init__(tokenizer)
         self.max_length = max_length
 
     def __call__(self, batch):
-        images = [i["image"] for i in batch]
-        text_data = [i["text_data"] for i in batch]
-        answer = [i["answer"] for i in batch]
-
-        images_tensor = torch.stack(images)
-        input_sequences = []
-        for i in range(len(text_data)):
-            input_sequences.append(f"{text_data[i]} {answer[i]}")
-
-        # max length is 192
-        encoded_full_sequences = self.tokenizer.batch_encode_plus(
-            input_sequences,
-            padding="max_length",
-            max_length=self.max_length,
-            padding_side="left",
-            return_tensors="pt",
-            truncation=True,
-        )
-        input_ids = encoded_full_sequences["input_ids"]
-        attention_mask = encoded_full_sequences["attention_mask"]
-        labels = input_ids.clone()
-        labels[:, :-1] = input_ids[:, 1:].clone()
-        # doesn't get included in loss calculation
-        labels[:, -1] = -100
-
-        original_lengths = [len(self.tokenizer.encode(s)) for s in input_sequences]
-        for i in range(len(batch)):
-            question_length = len(
-                self.tokenizer.encode(text_data[i], add_special_tokens=False)
-            )
-
-            # Ignore this sample
-            if original_lengths[i] > self.max_length:
-                labels[i, :] = -100
-                continue
-
-            first_token_pos = attention_mask[i].nonzero(as_tuple=True)[0][0].item()
-            # first_token_pos is the first position where the attention mask is 1, due to list indexing we are subtracting an extra 1 here because this is the label which is shifted left by 1
-            question_end = first_token_pos + question_length - 1
-            labels[i, :question_end] = -100
-
-        return {
-            "image": images_tensor,
-            "input_ids": input_ids,
-            "attention_mask": attention_mask,
-            "labels": labels,
-        }
+        batch = self.prepare_batch(batch, self.max_length)
+        return batch

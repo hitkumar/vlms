@@ -8,7 +8,7 @@ Videos
 
 Dev Env
 - To activate the uv env, use source .venv/bin/activate
-- To run the train script, use `python -u train.py > /tmp/logs.txt 2>&1`. After moving train.py to scripts, we need to use python -m scripts.train
+- To run the train script, use `python -m scripts.train `. Append "> /tmp/logs.txt 2>&1" if you want to redirect the logs to a file.
 - To run the generate script, use  python -m scripts.generate. Run this like a module.
 When we run python scripts/generate.py, we get the module not found error with the data module.
 

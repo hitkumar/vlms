@@ -13,7 +13,7 @@ class VLMConfig:
     vit_ln_eps: float = 1e-6
     vit_cls_flag: bool = False
     vit_model_type: str = (
-        "google/siglip-base-patch16-512"  #'google/siglip-base-patch16-224'
+        "google/siglip-base-patch16-512"  # 'google/siglip-base-patch16-224'
     )
 
     lm_hidden_dim: int = 576
@@ -31,9 +31,7 @@ class VLMConfig:
     lm_dropout: float = 0.0
     lm_n_blocks: int = 30
     lm_attn_scaling: float = 1.0
-    lm_max_length: int = (
-        256 - 64
-    )  # Deduct the image token length to achieve a 'nice number'
+    lm_max_length: int = 1024
     lm_use_tokens: bool = (
         False  # Decide if the LM expects tokens or embeddings as input (if using as a backbone for the VLM, set to False)
     )
@@ -52,6 +50,9 @@ class VLMConfig:
     hf_repo_name: str = "nanoVLM"
     vlm_extra_tokens: dict[str, str] = field(
         default_factory=lambda: {"image_token": "<|image|>"}
+    )
+    lm_chat_template: str = (
+        "{% for message in messages %}{{'<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n'}}{% endfor %}{% if add_generation_prompt %}{{ '<|im_start|>assistant\n' }}{% endif %}"
     )
 
 

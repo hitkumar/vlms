@@ -1,9 +1,12 @@
+import os
+
 import torch
 from data import get_image_processor, get_tokenizer, VQACollator, VQADataset
 from datasets import concatenate_datasets, load_dataset
 from models import TrainConfig, VLMConfig
 from torch.utils.data import DataLoader
 
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 vlm_config = VLMConfig()
 train_cfg = TrainConfig()
@@ -62,6 +65,10 @@ train_loader = DataLoader(
     collate_fn=vqa_collator,
     num_workers=8,
 )
+# im_end is the pad token
+print(
+    f"tokeninzer pad token id: {tokenizer.pad_token_id}, pad token is {tokenizer.pad_token}, decoded pad token is {tokenizer.decode([tokenizer.pad_token_id])}"
+)
 for batch in train_loader:
     print(f"batch keys are: {batch.keys()}")
     for key, value in batch.items():
@@ -73,4 +80,15 @@ for batch in train_loader:
             )
         else:
             print(f"{key}: {type(value)}")
+        if key == "input_ids":
+            # we want to see the <image> tokens replaced by image embeddings in VLM
+            print(f"input_ids decoded is: {tokenizer.decode(value[0, :])}")
+        if key == "attention_mask":
+            # padding values are 0, others are 0.
+            print(
+                f"attention_mask is: {value[0, :]} (zeros: {(value[0] == 0).sum().item()}, ones: {(value[0] == 1).sum().item()})"
+            )
+            print(
+                f"attention_mask[1] is: {value[1, :]} (zeros: {(value[1] == 0).sum().item()}, ones: {(value[1] == 1).sum().item()})"
+            )
     break

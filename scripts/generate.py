@@ -6,6 +6,10 @@ from data import get_image_processor, get_tokenizer
 from models import VLM
 from PIL import Image
 
+torch.manual_seed(0)
+if torch.cuda.is_available():
+    torch.cuda.manual_seed_all(0)
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Generate text from VLM")
@@ -24,13 +28,13 @@ def parse_args():
     parser.add_argument(
         "--prompt",
         type=str,
-        default="What do you see?",
+        default="Explain the scene in detail",
         help="text prompt to feed to the model",
     )
     parser.add_argument(
         "--max_new_tokens",
         type=int,
-        default=100,
+        default=20,
         help="maximum number of tokens to generate",
     )
     parser.add_argument(
@@ -54,23 +58,32 @@ def main():
     model = VLM.from_pretrained(checkpoint_path).to(device)
     print("Model loaded successfully")
     model.eval()
-    tokenizer = get_tokenizer(model.cfg.lm_tokenizer)
+    tokenizer = get_tokenizer(model.cfg.lm_tokenizer, model.cfg.vlm_extra_tokens)
     image_processor = get_image_processor(model.cfg.vit_img_size)
+    messages = [
+        {
+            "role": "user",
+            "content": tokenizer.image_token * model.cfg.mp_image_token_length
+            + args.prompt,
+        }
+    ]
+    encoded_prompt = tokenizer.apply_chat_template(
+        [messages], tokenize=True, add_generation_prompt=True
+    )
+    tokens = torch.tensor(encoded_prompt).to(device)
+    print(
+        f"input tokens shape is {tokens.shape}, decoded prompt is {tokenizer.decode(encoded_prompt[0])}"
+    )
 
-    text = args.prompt
-    template = f"Question: {text} Answer:"
-    encoded = tokenizer.batch_encode_plus([template], return_tensors="pt")
-    tokens = encoded["input_ids"].to(device)
-    print(f"input tokens shape is {tokens.shape}")
-
-    image = Image.open(args.image)
+    image = Image.open(args.image).convert("RGB")
     image_tensor = image_processor(image).unsqueeze(0).to(device)
     print(f"image shape is {image_tensor.shape}")
-
-    gen = model.generate(tokens, image_tensor, max_new_tokens=10)
-    print(f"generated tokens shape is {gen.shape}")
-
-    print(f"output is {tokenizer.batch_decode(gen, skip_special_tokens=True)[0]}")
+    for i in range(args.generations):
+        gen = model.generate(tokens, image_tensor, max_new_tokens=args.max_new_tokens)
+        # print(f"generated tokens shape is {gen.shape}")
+        print(
+            f"output {i} is {tokenizer.batch_decode(gen, skip_special_tokens=True)[0]}"
+        )
 
 
 if __name__ == "__main__":

@@ -92,3 +92,5 @@ for batch in train_loader:
                 f"attention_mask[1] is: {value[1, :]} (zeros: {(value[1] == 0).sum().item()}, ones: {(value[1] == 1).sum().item()})"
             )
     break
+
+print(f"tokenizer image token is {tokenizer.image_token_id}")

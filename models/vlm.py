@@ -1,12 +1,12 @@
 import json
 import os
-import tempfile
 from dataclasses import asdict
 from typing import Optional
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from data import get_tokenizer
 from models import LM, MP, ViT, VLMConfig
 from models.utils import top_k_top_p_filtering
 
@@ -28,106 +28,162 @@ class VLM(nn.Module):
         self.MP = MP(cfg)
         self.load_backbone = load_backbone
 
-        # Import get_tokenizer here to avoid circular import
-        from data import get_tokenizer
-
         self.tokenizer = get_tokenizer(
             cfg.lm_tokenizer, cfg.vlm_extra_tokens, cfg.lm_chat_template
         )
 
-    def forward(self, input_ids, image, attention_mask=None, targets=None):
+    def replace_image_tokens(self, token_embds, input_ids, image_embeds):
+        """
+        Replace embeddings for image tokens in token_embds with embeddings from image_embeds.
+
+        Args:
+            token_embds: Tensor of shape [batch_size, seq_len, hidden_dim] containing token embeddings
+            input_ids: Tensor of shape [batch_size, seq_len] containing input token IDs
+            image_embeds: Tensor of shape [batch_size, img_seq_len, hidden_dim] containing image embeddings
+
+        Returns:
+            Tensor of shape [batch_size, seq_len, hidden_dim] with image token embeddings replaced
+        """
+        updated_token_embds = token_embds.clone()
+        # [B, N]
+        mask_image_tokens = input_ids == self.tokenizer.image_token_id
+        updated_token_embds[mask_image_tokens] = image_embeds.view(
+            -1, image_embeds.size(-1)
+        ).to(updated_token_embds.dtype)
+        return updated_token_embds
+
+    def forward(self, input_ids, images, attention_mask=None, targets=None):
+        if isinstance(images, list):
+            if not images:
+                raise ValueError("No images provided.")
+            else:
+                if isinstance(images[0], list):
+                    # each image is of dim [1, 3, img_size, img_size]
+                    images = [img for img_list in images for img in img_list]
+                # [B, 3, W, H]
+                images = torch.cat(images, dim=0).to(input_ids.device)
         # Process image to be in the same embedding space as text tokens
-        # [B, 64, 576]
-        image_embeds = self.vision_encoder(image)
+        # [B, mp_image_token_length, 576]
+        image_embeds = self.vision_encoder(images)
         image_embeds = self.MP(image_embeds)
-        batch_size, seq_len, _ = image_embeds.shape
 
         # [B, N, D]
         token_embds = self.decoder.token_embedding(input_ids)
-        # [B, N + 64, D]
-        combined_embds = torch.cat((image_embeds, token_embds), dim=1)
+        # Replace image tokens with image embeddings
+        combined_embds = self.replace_image_tokens(token_embds, input_ids, image_embeds)
 
-        if attention_mask is not None:
-            # all image tokens should be attended to
-            image_attention_mask = torch.ones(
-                (batch_size, seq_len),
-                dtype=attention_mask.dtype,
-                device=attention_mask.device,
-            )
-            attention_mask = torch.cat((image_attention_mask, attention_mask), dim=1)
-
+        # These are the logits, shape is [B, N, lm_hidden_dim]
         lm_out = self.decoder(combined_embds, attention_mask=attention_mask)
         loss = None
         if targets is not None:
             # shape is [B, N, vocab_size]
             logits = self.decoder.head(lm_out)
-            logits = logits[:, image_embeds.size(1) :, :]
             # print(f"logits shape: {logits.shape}, targets shape: {targets.shape}")
+            # targets already has -100 for tokens which should be ignored during loss computation
             loss = F.cross_entropy(
                 logits.reshape(-1, logits.size(-1)), targets.reshape(-1)
             )
 
         return lm_out, loss
 
-    @torch.no_grad()
-    def generate(self, input_ids, image, attention_mask=None, max_new_tokens=20):
+    @torch.inference_mode()
+    def generate(
+        self,
+        input_ids,
+        images,
+        attention_mask=None,
+        max_new_tokens=20,
+        top_k=50,
+        top_p=0.9,
+        temperature=0.5,
+        greedy=False,
+    ):
+        if isinstance(images, list):
+            if not images:
+                raise ValueError("No images provided.")
+            else:
+                if isinstance(images[0], list):
+                    # each image is of dim [1, 3, img_size, img_size]
+                    images = [img for img_list in images for img in img_list]
+                # [B, 3, W, H]
+                images = torch.cat(images, dim=0).to(input_ids.device)
         # Process image to be in the same embedding space as text tokens
-        # [B, 64, 576]
-        image_embeds = self.vision_encoder(image)
+        # [B, mp_image_token_length, 576]
+        image_embeds = self.vision_encoder(images)
         image_embeds = self.MP(image_embeds)
-        batch_size, seq_len, _ = image_embeds.shape
 
         # [B, N, D]
         token_embds = self.decoder.token_embedding(input_ids)
-        # [B, N + 64, D]
-        combined_embds = torch.cat((image_embeds, token_embds), dim=1)
+        # Replace image tokens with image embeddings
+        combined_embds = self.replace_image_tokens(token_embds, input_ids, image_embeds)
+        batch_size = combined_embds.size(0)
 
-        if attention_mask is not None:
-            # all image tokens should be attended to
-            image_attention_mask = torch.ones(
-                (batch_size, seq_len),
-                dtype=attention_mask.dtype,
-                device=attention_mask.device,
-            )
-            attention_mask = torch.cat((image_attention_mask, attention_mask), dim=1)
+        # These are the logits, shape is [B, N, lm_hidden_dim]
+        lm_out = self.decoder(combined_embds, attention_mask=attention_mask)
+        if not self.cfg.lm_use_tokens:
+            # [B, N, vocab_size]
+            logits = self.decoder.head(lm_out)
+        logits = logits[:, -1, :]
+        newly_generated_ids_list = []
 
-        outputs = combined_embds
-        generated_tokens = torch.zeros(
-            (batch_size, max_new_tokens), device=input_ids.device, dtype=input_ids.dtype
-        )
+        for _ in range(max_new_tokens):
+            if greedy:
+                next_token_id = torch.argmax(logits, dim=-1, keepdim=True)
+            else:
+                filtered_logits = top_k_top_p_filtering(logits)
+                probs = torch.softmax(filtered_logits, dim=-1)
+                next_token_id = torch.multinomial(probs, num_samples=1)
 
-        for i in range(max_new_tokens):
-            model_out = self.decoder(outputs, attention_mask=attention_mask)
-            # [B, emb_dim]
-            last_token_embds = model_out[:, -1, :]
-            if not self.cfg.lm_use_tokens:
-                # [B, emb_dim] -> [B, vocab_size]
-                last_token_embds = self.decoder.head(last_token_embds)
-
-            # [B, vocab_size]
-            filtered_logits = top_k_top_p_filtering(last_token_embds)
-            probs = torch.softmax(filtered_logits, dim=-1)
-            next_token = torch.multinomial(probs, num_samples=1)
-            generated_tokens[:, i] = next_token.squeeze(-1)
-
-            # [B, 1, emb_dim]
-            next_embds = self.decoder.token_embedding(next_token)
-            outputs = torch.cat((outputs, next_embds), dim=1)
-
+            # next_token_id is of dim [B, 1]
+            newly_generated_ids_list.append(next_token_id)
+            # [B, 1, lm_hidden_dim]
+            next_token_embd = self.decoder.token_embedding(next_token_id)
+            combined_embds = torch.cat([combined_embds, next_token_embd], dim=1)
             if attention_mask is not None:
                 attention_mask = torch.cat(
                     (
                         attention_mask,
                         torch.ones(
                             (batch_size, 1),
-                            dtype=attention_mask.dtype,
                             device=attention_mask.device,
+                            dtype=attention_mask.dtype,
                         ),
                     ),
                     dim=1,
                 )
+            lm_out = self.decoder(combined_embds, attention_mask=attention_mask)
+            if not self.cfg.lm_use_tokens:
+                # [B, N, vocab_size]
+                logits = self.decoder.head(lm_out)
+            logits = logits[:, -1, :]
 
-        return generated_tokens
+        generated_ids = torch.cat(newly_generated_ids_list, dim=1)
+
+        # Truncate the sequences to the first eos token or to the max length
+        if self.tokenizer.eos_token_id is not None and generated_ids.numel() > 0:
+            seq_len = generated_ids.size(1)
+            device = generated_ids.device
+            eos_mask = generated_ids == self.tokenizer.eos_token_id
+            col_indices_for_min = torch.arange(seq_len, device=device)
+            masked_col_indices = torch.where(
+                eos_mask,
+                col_indices_for_min.unsqueeze(0).expand_as(generated_ids),
+                seq_len + 1,
+            )
+            first_eos_indices_values = torch.min(masked_col_indices, dim=1).values
+            actual_first_eos_indices = torch.clamp(
+                first_eos_indices_values, max=seq_len
+            )
+            col_indices_for_comparison = (
+                torch.arange(seq_len, device=device)
+                .unsqueeze(0)
+                .expand_as(generated_ids)
+            )
+            mask = col_indices_for_comparison > actual_first_eos_indices.unsqueeze(1)
+            generated_ids[mask] = self.tokenizer.pad_token_id
+
+        # [B, max_new_tokens]
+        return generated_ids
 
     @classmethod
     def from_pretrained(
@@ -179,33 +235,34 @@ class VLM(nn.Module):
         # save weights
         save_model(self, os.path.join(save_directory, "model.safetensors"))
 
-    def push_to_hub(self, repo_id: str, private: bool = False):
-        """
-        Push the model and configuration to the Hugging Face Hub.
+    # def push_to_hub(self, repo_id: str, private: bool = False):
+    #     """
+    #     Push the model and configuration to the Hugging Face Hub.
+    #     Don't push to hf hub for now.
 
-        Args:
-            repo_id (str): The repo ID on the Hugging Face Hub.
-        """
-        from huggingface_hub import create_repo, upload_folder
+    #     Args:
+    #         repo_id (str): The repo ID on the Hugging Face Hub.
+    #     """
+    #     from huggingface_hub import create_repo, upload_folder
 
-        # Create repo
-        repo_url = create_repo(repo_id=repo_id, private=private, exist_ok=True)
-        repo_id = repo_url.repo_id
-        print("Created repo: ", repo_url)
+    #     # Create repo
+    #     repo_url = create_repo(repo_id=repo_id, private=private, exist_ok=True)
+    #     repo_id = repo_url.repo_id
+    #     print("Created repo: ", repo_url)
 
-        with tempfile.TemporaryDirectory() as save_path:
-            print("Saving model to tmp directory: ", save_path)
-            # Save to tmp directory
-            self.save_pretrained(save_path)
+    #     with tempfile.TemporaryDirectory() as save_path:
+    #         print("Saving model to tmp directory: ", save_path)
+    #         # Save to tmp directory
+    #         self.save_pretrained(save_path)
 
-            # Save model card
-            # with open(os.path.join(save_path, "README.md"), "w") as f:
-            #     f.write(MODEL_CARD_TEMPLATE.format(repo_id=repo_id))
+    #         # Save model card
+    #         # with open(os.path.join(save_path, "README.md"), "w") as f:
+    #         #     f.write(MODEL_CARD_TEMPLATE.format(repo_id=repo_id))
 
-            # Upload
-            return upload_folder(
-                repo_id=repo_id,
-                repo_type="model",
-                folder_path=save_path,
-                commit_message="Upload nanoVLM using push_to_hub",
-            )
+    #         # Upload
+    #         return upload_folder(
+    #             repo_id=repo_id,
+    #             repo_type="model",
+    #             folder_path=save_path,
+    #             commit_message="Upload nanoVLM using push_to_hub",
+    #         )

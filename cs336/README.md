@@ -25,3 +25,9 @@ Lecture 5
 - Shared memory and global memory (DRAM)
 - Tiling, burst sections, memory coallescing are some key ideas to understand GPU performance for models
 - Flash attention walkthrough - tiling, operator fusion and online softmax are key ideas.
+
+Lecture 6
+- Talks about benchmarking and profiling to start the lecture.
+- Very important to profile, pytorch profiler is one initial tool to use, but use Nvidia profiler for additional insights
+- Triton kernels are a good way to fuse operations and improve performance
+- Torch compile should be the first thing to try to improve performance

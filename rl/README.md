@@ -37,3 +37,6 @@ Open source RL libraries
 
 https://www.perplexity.ai/hub/blog/rl-training-for-math-reasoning
 - Mentios using nemoRL which has since been deprecated.
+
+RL track at AI Engineer
+- Talk from Will covering verifiers: https://www.youtube.com/watch?v=PbHm2qKnu10&list=PLcfpQ4tk2k0V16VYYwnwF2g-EsKRIkJaC&index=3

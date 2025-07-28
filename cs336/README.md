@@ -43,3 +43,19 @@ Lecture 7
 - Batch size is an important lever for PP and DP.
 - Typically combine these parallelism approaches (3D, 4D parallelism)
 - TPU Book and HuggingFace book remain important references for more details.
+
+Lecture 8
+- Explain parallelism techniques using code.
+We want to saturate our GPUs
+- NVLink vs NVSwitch
+- World Size vs rank
+- Collective operations
+    - Broadcast
+    - Scatter
+- All-reduce = reduce-Scatter + all-gather
+- Dist barrier is important
+- Data parallelism (cut along the batch dimension)
+- Tensor parallelism (cut along the hidden dimension)
+    - Split along the hidden dims
+- Pipeline parallelism
+- JAX handles this automatically once we define the sharding structure.

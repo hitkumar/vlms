@@ -31,3 +31,15 @@ Lecture 6
 - Very important to profile, pytorch profiler is one initial tool to use, but use Nvidia profiler for additional insights
 - Triton kernels are a good way to fuse operations and improve performance
 - Torch compile should be the first thing to try to improve performance
+
+Lecture 7
+- Distributed training (part 1)
+- Talks about different types of parallelism - Data Parallel, Model Parallel (Tensor Parallel, Pipeline Parallel) and sequence parallel
+- Zero Stage 1 and 2 have no communication overhead and are a no brainer to use. Zero stage 3 (FSDP) has overhead, but still worth it.
+- Pipeline parallel is hard to implement and bubbles remain an issue.
+- Tensor Parallel is easier to implement, but only works within a single node due to high communication overhead.
+- Sequence parallel makes pointwise operations like LayerNorm also parallelized as it helps distribute the activations across machines.
+- Rule of thumb is fit the model in memory (using Tensor parallel and then pipeline parallel) and then use DP to utilize all the GPUs
+- Batch size is an important lever for PP and DP.
+- Typically combine these parallelism approaches (3D, 4D parallelism)
+- TPU Book and HuggingFace book remain important references for more details.

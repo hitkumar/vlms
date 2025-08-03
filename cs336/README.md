@@ -59,3 +59,14 @@ We want to saturate our GPUs
     - Split along the hidden dims
 - Pipeline parallelism
 - JAX handles this automatically once we define the sharding structure.
+
+Lecture 9
+- Scaling Laws
+- Empiricial in nature, we don't have good bounds for theoretical scaling laws.
+- Data scaling: follows power law, which means linear relationship between log-data size and log-model error.
+- When scaling data size, you want the model to be big enough so that you are not in irreproducible error regime.
+- Scaling model size, learning rate (muP) and batch size (critical batch size) are important.
+- Kaplan scaling was off with predicting the coeffs of how loss changes with scaling model size and number of tokens.
+- Chinchilla paper does a better job of doing this (especially Approach 2)
+- Number of tokens per parameter is increasing as inference costs increase -> goal is to train the best small model.
+- Karpathy's scaling law notebook is a good one to repro Chinchilla results: https://github.com/karpathy/nanoGPT/blob/master/scaling_laws.ipynb

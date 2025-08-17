@@ -70,3 +70,26 @@ Lecture 9
 - Chinchilla paper does a better job of doing this (especially Approach 2)
 - Number of tokens per parameter is increasing as inference costs increase -> goal is to train the best small model.
 - Karpathy's scaling law notebook is a good one to repro Chinchilla results: https://github.com/karpathy/nanoGPT/blob/master/scaling_laws.ipynb
+
+Lecture 10
+- LLM Inference
+- Metrics that matter: Time to first token, Latency (seconds/token), Throughput (tokens/second)
+- Open source packages: vLLM, SGLang, Tensor-RT
+- We want arithmetic intensity to he high during inference.
+- Two stages of Inference
+  - Prefill: Fill the kv-cache given a prompt in parallel like training
+  - Generation: Generate one token at a time sequenctially.
+- Prefill is compute limited, generation is memory limited.
+- Attention arithmetic intensity is especially hard to improve as each sequence needs its own Q,K,V vectors. In MLP, each sequence has the same MLP weights.
+- Inference is memory limited.
+- For reducing memory consumption, we try to reduce the size of KV cache.
+    - Grouped Query Attention (use k keys/values for N queries)
+    - MLA used by Deepseek et.al
+    - Cross Layer Attention (share KVs across layers just as GQA shares them across heads)
+    - Local Attention which looks at just the local context, not the whole sequence. For example, sliding window attention.
+- SSM and Diffusion Models are alternatives to transformers that are more efficient.
+- Quantization
+   - Reduces memory so better for inference.
+- Model pruning
+   - Trim the model to make it smaller and then use distillation to achieve parity with the original model.
+- Speculative decoding

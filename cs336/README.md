@@ -93,3 +93,18 @@ Lecture 10
 - Model pruning
    - Trim the model to make it smaller and then use distillation to achieve parity with the original model.
 - Speculative decoding
+
+Lecture 11
+- Scaling Laws continued
+- Chinchilla recipe states that model size and training tokens should scale together. Optimal ratio is 20 tokens per parameters, so for a 70B param model, it should be trained on 1.4T tokens.
+- Cerebras-GPT
+  - Uses chinchilla recipe for scaling
+  - muP parametrization - scale learning rate and initialize as usual using fan_in.
+  - MiniCPM does the same
+- Chinchilla trains a new model from scratch for every experiment which is expensive. This is due to cosine learning rate. In cosine decay, rate of LR depends on total number of steps.
+- WSD is an alternative as we can reuse the warmup and stable part for each iteration.
+- Trend is to increase data to model ratio from 20.
+- Deepseek estimates optimal LR and batch size using scaling law analysis, don't use muP.
+- IsoFlop style scaling curve is commonly used.
+- muP allows you to use the same base LR as you scale the model, initialization scales by 1/sqrt(m_width) and lr by 1/m_width. m_width is just scaling factor d_m / d_mbase.
+- Can go a lot deeper.

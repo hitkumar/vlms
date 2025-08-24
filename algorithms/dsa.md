@@ -1,5 +1,8 @@
 # Data structures and algorithms
 
+This has some good implementations of data structures and algorithms in Python.
+https://github.com/donsheehy/datastructures/tree/master
+
 Complement this with solving problems
 
 Intro to Algorithms MIT for a refresher: https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/
@@ -33,3 +36,14 @@ Lecture 3
   - Selection sort (O(n^2))
   - Insertion sort (O(n^2))
   - Merge sort (O(n.log(n)))
+
+Lecture 4
+- Hashing
+- Direct Access Array, store the item at index k so that find(k) is O(1)
+- hash function h(k): {0, ... u-1} -> {0, ... m-1} where m << u.
+- Two approaches to collision resolution
+  - Open addressing which stores the item at a different index
+  - Separate chaining which stores all the items at the same index in a sequence.
+- Good hash function is important to reduce collisios and ensure that runtime is O(1)
+- Common choice is division, h(k) = k mod m
+- Universal hash function allows us to choose a dynamic hash function.

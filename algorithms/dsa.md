@@ -47,3 +47,11 @@ Lecture 4
 - Good hash function is important to reduce collisios and ensure that runtime is O(1)
 - Common choice is division, h(k) = k mod m
 - Universal hash function allows us to choose a dynamic hash function.
+
+Lecture 5
+- Linear Sorting
+- For comparison based sorting, we can't better than O(n.log(n))
+- For sorting, number of leaves in the tree is O(n!), so the height of the tree is O(log(n!)) which is O(n.log(n))
+- Direct Access Sort Array allows us to sort in O(n) time in case range of keys is small.
+- Tuple and counting sort is O(n + u) which is O(n) if u is O(n)
+- Radix sort is O(n + n.log_n(u)). We sory by the least significant digit first and then the next one, need to sort log_n(u) times

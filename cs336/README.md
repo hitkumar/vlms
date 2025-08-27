@@ -135,3 +135,43 @@ Lecture 12
   - Pre deployment testing of models.
 - Model capability and propensity matters.
 - We evaluate systems not just models these days.
+
+Lecture 13
+- Data
+- What data should we train on.
+- Data is the most important component to get right in training LLMs, which is one reason why companies don't disclose it.
+- Data quality scales with human effort.
+- From pre-training to post-training, data volume decreases, but data quality improves.
+- Pretraining datasets
+  - Books corpus
+  - Wikipedia
+  - gpt-2 webtext
+    - Pages that are outgoing links from reddit posts with >= 3 karma (surrogate for quality)
+  - CommonCrawl
+    - Runs a web crawl every month.
+    - Two formats: WARC (raw HTTP response like HTML), WET (converted to text)
+    - There are several tools to convert HTML to text and conversion matters for downstream task accuracy.
+  - CCNet
+    - Keeps documents that look like Wikipedia using a KenLM 5-gram model.
+  - C4
+    - Produced with T5 paper.
+    - Filters Common Crawl using manual heuristics, resulting dataset showed promising results.
+  - The Pile
+    - Effort to produce more open source datasets comparable to what gpt-3 used.
+  - Project Gutenberg: mostly books that have received copyright clearance
+  - Books3: taken down due to copyright issues.
+  - Stackexchange: QA datasets
+  - Github: coding data
+    - The Stack is one collection of permissively licensed code.
+- Previously rule based quality filtering was more common, model based filtering was avoided as it could introduce biases.
+- DCLM-pool -> DCLM-baseline
+- Nemotron-cc uses classifier ensemble to not filter as much as dclm, but still produce high quality data.
+- copyright
+  - key issue in GenAI
+  - Applies to original works, not collections, so things like telephone directories are not copyrightable.
+  - Applies to expression, not idea like Quicksort
+  - Most things on internet like personal websites are actually copyrighted
+  - To use a copyrighted work
+    - Get a license
+    - Appeal to fair use
+- Instruction datasets

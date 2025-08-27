@@ -108,3 +108,30 @@ Lecture 11
 - IsoFlop style scaling curve is commonly used.
 - muP allows you to use the same base LR as you scale the model, initialization scales by 1/sqrt(m_width) and lr by 1/m_width. m_width is just scaling factor d_m / d_mbase.
 - Can go a lot deeper.
+
+Lecture 12
+- Evaluating LLMs
+- Find out how good the model is.
+- Benchmarks are the way to measure this recently (MMLU, GPQA etc)
+- Andre Karpathy points to an evaluation crisis, we are not sure how good the LLMs are anymore.
+- Perplexity is a common metric to measure model performance. It is exp(-sum(logprob)/N) where N is the number of tokens. Lower is better.
+- There are some tasks that are close to perplexity like LAMBADA, HellaSwag.
+- Knowledge Benchmarks
+  - MMLU: multiple choice questions, more about testing knowledge than language understanding.
+  - MMLU-Pro
+  - GPQA
+  - Humanity's Last Exam
+- Instruction Following Benchmarks
+  - Chatbot Arena
+  - IFEval
+  - AlpacaEval
+- Agent Benchmarks
+  - SWEBench
+  - MLEBench
+- Reasoning benchmarks
+  - ARC-AGI
+- Safety benchmarks
+  - Jailbreaking
+  - Pre deployment testing of models.
+- Model capability and propensity matters.
+- We evaluate systems not just models these days.

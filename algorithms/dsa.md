@@ -55,3 +55,23 @@ Lecture 5
 - Direct Access Sort Array allows us to sort in O(n) time in case range of keys is small.
 - Tuple and counting sort is O(n + u) which is O(n) if u is O(n)
 - Radix sort is O(n + n.log_n(u)). We sory by the least significant digit first and then the next one, need to sort log_n(u) times
+
+Lecture 6
+- Binary Trees
+- Goal is to achieve worst case O(logN) performance for dynamic set and sequence operations.
+- Depth of node is the number of edges from the root to the node.
+- Height of node is the number of edges from the node to the deepest leaf.
+- Operations in a binary tree should be O(h) where h is the height of the tree.
+- Binary tree imposes an order from its traversal. Inorder traversal is one such traversal where nodes on the left are visited first, then the root and then the nodes on the right.
+- Set: traversal order is sorted by increasing order of the key, also called BST property.
+- Sequence: traversal order is the insertion order, need to maintain size of each node to ensure that sequence operations like get(index), set(index) can be done in O(h) time
+- Next our goal is to keep the tree balanced so that O(h) ~ O(logn)
+
+Lecture 7
+- Binary trees: AVL trees
+- Height balanced trees to get O(logn) time for all operations
+- One way to achieve balanced tree is rotations without changing the traversal order which is what AVL tree uses.
+- height balanced tree is one for which the difference in height between left and right subtree <= 1.
+- Two types of rotations to balance at each node
+  - Single rotation
+  - Double rotation

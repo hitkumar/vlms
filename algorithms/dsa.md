@@ -75,3 +75,20 @@ Lecture 7
 - Two types of rotations to balance at each node
   - Single rotation
   - Double rotation
+
+Lecture 8
+- Binary heaps
+- Priority Queue interface
+- Optimized for a particular subset of set operations: build(X), insert, deleteMax, findMax()
+- AVL trees support these operations in O(lgn) time. AVL sort is not in place though.
+- Binary heap and heap sort are one way to achieve this
+- PQ implementation using array or sorted array are not efficient.
+- Array as a complete binary tree gives an efficient implementation
+  - Implict tree structure, no pointers needed.
+  - left(i) - 2i+1
+  - right(i) - 2i+2
+  - parent(i) = floor(i-1/2)
+  - Max-heap property -> node key is larger than any elements in its subtree.
+- Heap sort
+  - In-place sort: max heap Q is a prefix of larger array A. This enables us to put max element at the end after deletion.
+- Building of a heap can be done in O(n) time

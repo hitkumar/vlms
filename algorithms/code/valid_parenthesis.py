@@ -68,3 +68,15 @@ if __name__ == "__main__":
     print(minHeap[0])
 
     heapq.heapify([1, 2, 3, 4, 5])
+
+    # More python, taken from https://www.youtube.com/watch?v=kGcUtckifXc
+
+    strings = ["a", "b", "c"]
+    # map returns an iterator, not a list
+    lengths = map(len, strings)
+    print(list(lengths))
+    f = lambda x: x * 2
+    print(f(2))
+
+    filter_out = filter(lambda s: s == "a", strings)
+    print(list(filter_out))

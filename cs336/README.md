@@ -175,3 +175,26 @@ Lecture 13
     - Get a license
     - Appeal to fair use
 - Instruction datasets
+
+Lecture 14
+- Data continued
+- Data filtering
+  - KenLM model which is a n-gram language model, runs fast and is available on HuggingFace. Based on Kneser-Ney smoothing.
+  - fasttext classifier based on word embeddings. Very simple and fast model, but very effective to filter large datasets.
+  - DSIR which involves data selection via importance resampling.
+- Filtering applications:
+  - language identification like filter only english text. Fasttext language identification is good. Dolma used this to filter out non-english text.
+  - quality filtering. Model based filtering is becoming the norm.
+  - Toxicity filtering, use a classifier to filter out toxic text.
+- Deduplication: exact duplicates vs near duplicates. Important not only for improving efficiency of training, but also to avoid memorization caused by seeing the same data many times.
+- Exact match filtering used by C4 using hashing like murmurhash3.
+- Bloom filters are a efficienct approximate data structure to test set membership.
+  - If return no, then it is definitely not a duplicate.
+  - If return yes, then mostly yes, small probabability of a no. So, there could be some false positives.
+  - False positive rate is configurable by using more bins or by using more hash functions.
+  - Go deeper by implementing a bloom filter in pytorch.
+- Jaccard similarity is a good way to measure similarity between two sets: intersection/union.
+- MinHash is a hash function so that Pr[h(A) = h(B)] = Jaccard(A,B)
+- Locality sensitive hashing builds on minhash to sharpen the probability.
+- Use n hash functions, break up into b bands of r hash functions each. n = b * r
+- A and B collide if for some band, all hash functions return the same value. This and or construction really sharpens the probabability of being a near duplicate.

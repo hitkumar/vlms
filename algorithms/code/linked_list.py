@@ -1,3 +1,6 @@
+from typing import List, Optional
+
+
 class ListNode:
     def __init__(self, x):
         self.item = x
@@ -83,6 +86,117 @@ class LinkedList:
 
     def delete_last(self):
         return self.delete_at(self.size - 1)
+
+    def reverseListUtil(self, head: Optional[ListNode]):
+        if head.next == None:
+            return (head, head)
+        curr = head
+        nextListHead, nextListTail = self.reverseListUtil(head.next)
+        nextListTail.next = curr
+        nextListTail = nextListTail.next
+        return (nextListHead, nextListTail)
+
+    def reverseList(self, head: Optional[ListNode]) -> Optional[ListNode]:
+        if head == None:
+            return None
+        reverseListHead, reverseListTail = self.reverseListUtil(head)
+        reverseListTail.next = None
+        return reverseListHead
+
+    def reverseListIter(self, head: Optional[ListNode]):
+        if head == None:
+            return None
+        prev, curr = None, head
+        while curr != None:
+            curr_next = curr.next
+            curr.next = prev
+            prev = curr
+            curr = curr_next
+            # if prev.next:
+            #     print(curr.val, curr.next.val)
+        return prev
+
+    def removeNthFromEnd(self, head: Optional[ListNode], n: int) -> Optional[ListNode]:
+        def find_len(head: Optional[ListNode]):
+            i = 0
+            while head != None:
+                i += 1
+                head = head.next
+            return i
+
+        len = find_len(head)
+        if len == 1:
+            return None
+        if n == len:
+            return head.next
+
+        headNode = head
+        pos_from_start = len - n - 1
+        i = 0
+        while head != None and i < pos_from_start:
+            head = head.next
+            i += 1
+        head.next = head.next.next
+        return headNode
+
+    def reorderListBrute(self, head: Optional[ListNode]) -> None:
+        if head == None:
+            return None
+
+        listHead = head
+        # could just use a python list as it is dynamic
+        nodes = {}
+        i = 0
+        while head != None:
+            nodes[i] = head
+            i += 1
+            head = head.next
+
+        start, end = 0, i - 1
+        dummyNode = ListNode(0)
+        head = dummyNode
+        while start < end:
+            dummyNode.next = nodes[start]
+            dummyNode = dummyNode.next
+            dummyNode.next = nodes[end]
+            dummyNode = dummyNode.next
+            start += 1
+            end -= 1
+
+        if start == end:
+            dummyNode.next = nodes[start]
+            dummyNode = dummyNode.next
+            start += 1
+        dummyNode.next = None
+        head = head.next
+
+    def reorderList(self, head: Optional[ListNode]) -> None:
+        if not head or not head.next:
+            return
+
+        # find middle and last of the list
+        slow, fast = head, head.next
+        while fast and fast.next:
+            slow = slow.next
+            fast = fast.next.next
+
+        second = slow.next
+        slow.next = None
+
+        # reverse the second part of the list
+        prev, curr = None, second
+        while curr:
+            tmp = curr.next
+            curr.next = prev
+            prev = curr
+            curr = tmp
+
+        # prev is the head of the reversed list, head is the head of first list
+        while prev:
+            head_next, prev_next = head.next, prev.next
+            head.next = prev
+            prev.next = head_next
+            prev, head = prev_next, head_next
 
 
 def main():

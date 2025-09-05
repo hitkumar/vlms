@@ -198,3 +198,44 @@ Lecture 14
 - Locality sensitive hashing builds on minhash to sharpen the probability.
 - Use n hash functions, break up into b bands of r hash functions each. n = b * r
 - A and B collide if for some band, all hash functions return the same value. This and or construction really sharpens the probabability of being a near duplicate.
+
+Lecture 15
+- RLHF / Alignment
+- Post training
+- Instruction Following
+- Collect data of behaviors we do want from LLM like chat, safety.
+- First post training step is SFT, typically QA data.
+- Fine-tuning a model on facts it doesn't know makes it hallucinate. It is tricky to know what model does know though. We should teach the model how to extract behaviors learnt during pre-training in a desired format. Adding new factual data can hurt the model sometimes.
+- Safety tuning is easy conceptually, but tricky part is to balance this with over-refusals. Model will refuse to answer even simple questions.
+- SFT data is now pretty big, so we incorporate SFT data during mid-training, this also helps with avoiding catastrophic forgetting.
+- After SFT, we do RLHF.
+- RLHF maximizes the reward from the model response.
+- LMs are policies
+- Typically pairwise feedback
+- PPO is one approach, although it is quite tricky to make it work in practice
+- DPO is a good alternate. It is not clear which of PPO or DPO is better.
+
+Lecture 16
+- Reinforcement Learning from Verifiable Rewards (RLVR)
+- DPO improves the LM policy by using pos gradient on y(w) and neg gradient on y(l)
+- Scales by prediction error and tries to maximize the likelihood of y(w)
+- RLVR is what gets us reasoning.
+- PPO is trick to implement, and needs a value model during training which adds additional memory overhead.
+- DPO inherently operates on pairwise data, so can't be used as is in RLVR settings.
+- GRPO is a new algo which removes these limitations.
+- Uses rewards within a group to calculate advantages
+- Dr.GRPO improves this in a couple of ways: removes division by std, only center rewards around mean.
+  - Also removes length normalization. Length norm makes the correct answers shorter and incorrect answers bigger as model is incentivized to blabber to get small penalties for mistakes.
+- Few case studies
+- Deepseek R1
+  - Use outcome rewards functions: accuracy and format rewards
+  - SFT init was useful for RL.
+  - Usual SFT/RLHF happens after RLVR.
+- Kimi K1.5
+  - Uses curriculum learning to train from easy to hard samples
+  - Considers samples model can't answer correctly for RL: not too difficult, not too easy
+- Qwen 3
+  - Filtering for difficulty
+  - RL with GRPO on only 3995 examples
+  - Show test time scaling with more thinking budget.
+  - Need to read more about thinking fusion.

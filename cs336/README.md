@@ -239,3 +239,12 @@ Lecture 16
   - RL with GRPO on only 3995 examples
   - Show test time scaling with more thinking budget.
   - Need to read more about thinking fusion.
+
+Lecture 17
+- Dive Deep into the mechanics of RLVR
+- RL systems are more complex than pretraining as you need to manage inference workloads, and manage multiple models.
+- Rewards, which are usually outcome rewards and verifiable rewards.
+- Policy: pi(a/s)
+- Naive policy gradient suffers from high variance, so we use baseline to get the advantage function (rewards - baseline)
+- GRPO improves on PPO as it removes the critic (aka value function)
+- Implementing this is tricky and requires a lot of details to get right.

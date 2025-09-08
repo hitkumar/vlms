@@ -92,3 +92,27 @@ Lecture 8
 - Heap sort
   - In-place sort: max heap Q is a prefix of larger array A. This enables us to put max element at the end after deletion.
 - Building of a heap can be done in O(n) time
+
+Lecture 9
+- Breadth first search
+- G = (V, E) where V is a set of vertices and E is a set of edges
+- Directed vs undirected graphs
+- Adjacency list representation of a graph
+- Paths is a sequence of vertices p = (v1, v2 ,... vn)
+- Single source shortest path problem
+- Breadth first search computes level sets to solve ths and keeps track of Parent(u) to reconstruct the shortest path.
+- Runs in O(V + E) time.
+
+Lecture 10
+- Depth first search
+- Used for solving single source reachability problem, not shortest path.
+- Runs in O(E) time as it explores each edge only once.
+- Full-DFS visits all vertices in the graph.
+- Connected components of a graph can be done using Full-DFS.
+- Topo sort for DAGs.
+  - If there is an edge (u->v), u appears before v in topo ordering
+  - Finishing order is the order in which DFS finishes visiting each vertex
+  - Topo order is reverse of finishing order.
+  - Topo order only exists if there is no cycle.
+- Cycle detection: During DFS, will go back to the ancestor, this can be used to detect the cycle and return the cycle as well
+  - (v0, v1, v2, ... vk, v0), we need to track the ancestors though.

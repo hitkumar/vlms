@@ -116,3 +116,27 @@ Lecture 10
   - Topo order only exists if there is no cycle.
 - Cycle detection: During DFS, will go back to the ancestor, this can be used to detect the cycle and return the cycle as well
   - (v0, v1, v2, ... vk, v0), we need to track the ancestors though.
+
+Lecture 15
+- Dynamic programming
+- Divide into Subproblems
+- Relate Subproblems
+- Topo order for subproblems
+- Base cases
+- Original problem is one of the subproblems typically.
+- Memoization is the key idea to avoid recomputation of subproblems.
+- Fibonnaci, shortest path and Bowling problems were covererd.
+- Key is to define the subproblems and the recurrence relation.
+
+Lecture 16
+- Dynamic programming part 2
+- LCS
+  - Need to store the parent pointers to get the actual LCS, not just the length.
+- LIS
+  - L(i) is the length of longest increasing subsequence ending at i which includes i. Including i is important for the recurrence to work.
+  - Final answer is max(L(i)) for all i.
+  - Defining the subproblem constraint is the key.
+  - DP has connection to shortest path problems, although it is an overkill to use it here as we have some special properties of the graph that we leverage using the DP recurrence.
+- Alternating coin game
+  - Min-max formulation. Again subproblem formulation is the key.
+  - Subproblem expansion is also an interesting idea.

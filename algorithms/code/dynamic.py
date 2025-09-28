@@ -91,6 +91,41 @@ class DynamicProgramming:
                         parent[i] = j
         return build_lis_string()
 
+    def coinChangeBottomUp(self, coins: List[int], amount: int) -> int:
+        coin_change = {0: 0}
+
+        def coin_change_util(coins, amount, coin_change):
+            if amount in coin_change:
+                return coin_change[amount]
+            res = float("inf")
+            for coin in coins:
+                if amount - coin >= 0:
+                    coin_change_small = coin_change_util(
+                        coins, amount - coin, coin_change
+                    )
+                    res = (
+                        min(res, 1 + coin_change_small)
+                        if coin_change_small >= 0
+                        else res
+                    )
+
+            res = -1 if res == float("inf") else res
+
+            coin_change[amount] = res
+            return res
+
+        return coin_change_util(coins, amount, coin_change)
+
+    def coinChangeTopDown(self, coins: List[int], amount: int) -> int:
+        dp = [-1] * (amount + 1)
+        dp[0] = 0
+        for i in range(1, amount + 1):
+            for c in coins:
+                if i - c >= 0 and dp[i - c] >= 0:
+                    dp[i] = min(dp[i], dp[i - c] + 1) if dp[i] != -1 else dp[i - c] + 1
+
+        return dp[amount]
+
 
 def main():
     dp = DynamicProgramming()

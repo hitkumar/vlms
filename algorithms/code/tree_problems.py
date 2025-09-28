@@ -196,6 +196,68 @@ class TreeProblems:
             else:
                 return res
 
+    def isBalanced(self, root: Optional[TreeNode]) -> bool:
+        def get_height(node: Optional[TreeNode]):
+            if node is None:
+                return (True, 0)
+            is_left_balanced, left_height = get_height(node.left)
+            is_right_balanced, right_height = get_height(node.right)
+            if (
+                abs(left_height - right_height) > 1
+                or not is_left_balanced
+                or not is_right_balanced
+            ):
+                return (False, -1)
+            height = 1 + max(left_height, right_height)
+            return (True, height)
+
+        is_balanced, height = get_height(root)
+        return is_balanced
+
+    def diameterOfBinaryTree(self, root: Optional[TreeNode]) -> int:
+        res = 0
+
+        def get_diameter(root: Optional[TreeNode]):
+            if not root:
+                return 0
+            nonlocal res
+            left_height = get_diameter(root.left)
+            right_height = get_diameter(root.right)
+            res = max(res, left_height + right_height)
+            return 1 + max(left_height, right_height)
+
+        get_diameter(root)
+        return res
+
+    def diameterOfBinaryTreeNoGlobalVar(self, root: Optional[TreeNode]) -> int:
+        def get_diameter(root: Optional[TreeNode], res):
+            if not root:
+                return 0
+            left_height = get_diameter(root.left, res)
+            right_height = get_diameter(root.right, res)
+            res[0] = max(res[0], left_height + right_height)
+            return 1 + max(left_height, right_height)
+
+        res = [0]
+        get_diameter(root, res)
+        return res[0]
+
+    def diameterOfBinaryTreeTuple(self, root: Optional[TreeNode]) -> int:
+        def get_diameter(root: Optional[TreeNode]):
+            if not root:
+                return (0, 0)
+
+            left_height, left_diameter = get_diameter(root.left)
+            right_height, right_diameter = get_diameter(root.right)
+            max_diameter = max(
+                max(left_diameter, right_diameter), left_height + right_height
+            )
+            max_height = 1 + max(left_height, right_height)
+            return max_height, max_diameter
+
+        max_height, max_diameter = get_diameter(root)
+        return max_diameter
+
 
 def main():
     root = TreeNode(1)
